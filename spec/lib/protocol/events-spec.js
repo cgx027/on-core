@@ -159,7 +159,7 @@ describe("Event protocol subscribers", function () {
         it("should publish and subscribe to TaskNotification messages", function () {
             var uuid = helper.injector.get('uuid'),
                 taskId = uuid.v4(),
-                data = 'test';
+                data = {status: 'completed'};
             messenger.subscribe = sinon.spy(function(a,b,callback) {
                 callback(data,testMessage);
                 return Promise.resolve(testSubscription);
@@ -179,8 +179,7 @@ describe("Event protocol subscribers", function () {
 
         it("should throw errors with invalid taskId", function () {
             var uuid = helper.injector.get('uuid'),
-                taskId = uuid.v4(),
-                data = 'test';
+                data = {};
             messenger.subscribe = sinon.spy(function(a,b,callback) {
                 callback(data,testMessage);
                 return Promise.resolve(testSubscription);
@@ -192,10 +191,10 @@ describe("Event protocol subscribers", function () {
             }).to.throw("Invalid taskId, uuid expected");
         });
 
-        it("should throw errors with invalid data", function () {
+        it("should throw errors with invalid status", function () {
             var uuid = helper.injector.get('uuid'),
                 taskId = uuid.v4(),
-                data = 'test';
+                data = {status: 'I am not a valid status'};
             messenger.subscribe = sinon.spy(function(a,b,callback) {
                 callback(data,testMessage);
                 return Promise.resolve(testSubscription);
@@ -203,7 +202,21 @@ describe("Event protocol subscribers", function () {
             messenger.publish.resolves();
 
             expect(function(){
-                events.publishTaskNotification(taskId, 123);
+                events.publishTaskNotification(taskId, data);
+            }).to.throw("Invalid status");
+        });
+
+        it("should throw errors with invalid data", function () {
+            var uuid = helper.injector.get('uuid'),
+                taskId = uuid.v4(),
+                data = 'I am not an object';
+            messenger.subscribe = sinon.spy(function(a,b,callback) {
+                callback(data, testMessage);
+                return Promise.resolve(testSubscription);
+            });
+            messenger.publish.resolves();
+            expect(function(){
+                events.publishTaskNotification(taskId, data);
             }).to.throw("Bad Notification Data");
         });
     });
